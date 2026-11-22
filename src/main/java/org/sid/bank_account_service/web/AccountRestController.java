@@ -1,18 +1,24 @@
 package org.sid.bank_account_service.web;
 
+import org.sid.bank_account_service.dto.BankAccountRequestDTO;
+import org.sid.bank_account_service.dto.BankAccountResponseDTO;
 import org.sid.bank_account_service.entities.BankAccount;
 import org.sid.bank_account_service.repositories.BankAccountRepository;
+import org.sid.bank_account_service.service.AccountService;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
+@RequestMapping("/api")
 public class AccountRestController {
 
     private final BankAccountRepository bankAccountRepository;
+    private final AccountService accountService;
 
-    public AccountRestController(BankAccountRepository bankAccountRepository) {
+    public AccountRestController(BankAccountRepository bankAccountRepository, AccountService accountService) {
         this.bankAccountRepository = bankAccountRepository;
+        this.accountService = accountService;
     }
 
     @GetMapping("/bankAccounts")
@@ -23,40 +29,17 @@ public class AccountRestController {
     @GetMapping("/bankAccounts/{id}")
     public BankAccount getAccount(@PathVariable String id) {
         return bankAccountRepository.findById(id)
-                .orElseThrow(() ->
-                        new RuntimeException(
-                                String.format("Account %s not found", id)
-                        )
-                );
+                .orElseThrow(() -> new RuntimeException(String.format("Account %s not found", id)));
     }
 
-    @PostMapping("/bankAccounts/{id}")
-    public BankAccount update(
-            @PathVariable String id,
-            @RequestBody BankAccount bankAccount) {
+    @PostMapping("/bankAccounts")
+    public BankAccountResponseDTO save(@RequestBody BankAccountRequestDTO requestDTO) {
+        return accountService.addAccount(requestDTO);
+    }
 
-        BankAccount account = bankAccountRepository.findById(id)
-                .orElseThrow(() ->
-                        new RuntimeException("Account not found")
-                );
-
-        if (bankAccount.getBalance() != null) {
-            account.setBalance(bankAccount.getBalance());
-        }
-
-        if (bankAccount.getCreatedAt() != null) {
-            account.setCreatedAt(new java.util.Date());
-        }
-
-        if (bankAccount.getType() != null) {
-            account.setType(bankAccount.getType());
-        }
-
-        if (bankAccount.getCurrency() != null) {
-            account.setCurrency(bankAccount.getCurrency());
-        }
-
-        return bankAccountRepository.save(account);
+    @PutMapping("/bankAccounts/{id}")
+    public BankAccountResponseDTO update(@PathVariable String id, @RequestBody BankAccountRequestDTO requestDTO) {
+        return accountService.updateAccount(id, requestDTO);
     }
 
     @DeleteMapping("/bankAccounts/{id}")
